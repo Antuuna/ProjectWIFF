@@ -1,4 +1,5 @@
 import './App.css'
+import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Edges } from '@react-three/drei'
 import { MOUSE } from 'three'
@@ -43,14 +44,14 @@ function GridOfCubes() {
 }
 
 function InnerBox() {
-  // Create the inner rectangular prism centered within the outer one
+  // Centered at the origin
   return (
     <mesh position={[0, 0, 0]}>
       <boxGeometry args={[INNER_LENGTH_TOTAL_FEET, INNER_HEIGHT_TOTAL_FEET, INNER_WIDTH_TOTAL_FEET]} />
       <meshStandardMaterial color="gray" transparent opacity={0.3} />
       <Edges color="black" />
     </mesh>
-  )
+  );
 }
 
 function InnerInchGrid() {
@@ -85,78 +86,82 @@ function InnerInchGrid() {
   return <>{gridBoxes}</>
 }
 
-// Simple 10' x 8'6" x 13'6" prism
-// const PRISM_LENGTH_FEET = 10
-// const PRISM_WIDTH_FEET = 8
-// const PRISM_WIDTH_INCHES = 6
-// const PRISM_HEIGHT_FEET = 13
-// const PRISM_HEIGHT_INCHES = 6
-// const PRISM_WIDTH_TOTAL_FEET = PRISM_WIDTH_FEET + inchesToFeet(PRISM_WIDTH_INCHES)
-// const PRISM_HEIGHT_TOTAL_FEET = PRISM_HEIGHT_FEET + inchesToFeet(PRISM_HEIGHT_INCHES)
-// function SimplePrism() {
-//   // Center at half its height so bottom is at y=0
-//   return (
-//     <mesh position={[0, PRISM_HEIGHT_TOTAL_FEET / 2, 0]}>
-//       <boxGeometry args={[PRISM_LENGTH_FEET, PRISM_HEIGHT_TOTAL_FEET, PRISM_WIDTH_TOTAL_FEET]} />
-//       <meshStandardMaterial color="gray" transparent opacity={0.1} />
-//       <Edges color="black" />
-//     </mesh>
-//   );
-// }
-
-// // Trailer dimensions
-// const TRAILER_LENGTH_FEET = 28;
-// const TRAILER_WIDTH_FEET = 8;
-// const TRAILER_WIDTH_INCHES = 6;
-// const TRAILER_HEIGHT_FEET = 2;
-// const TRAILER_HEIGHT_INCHES = 0;
-
-// const TRAILER_WIDTH_TOTAL_FEET = TRAILER_WIDTH_FEET + inchesToFeet(TRAILER_WIDTH_INCHES);
-// const TRAILER_HEIGHT_TOTAL_FEET = TRAILER_HEIGHT_FEET + inchesToFeet(TRAILER_HEIGHT_INCHES);
-
-// function TrailerPrism() {
-//   // Center at half its height so bottom is at y=0
-//   return (
-//     <mesh position={[19, TRAILER_HEIGHT_TOTAL_FEET / 2, 0]}>
-//       <boxGeometry args={[TRAILER_LENGTH_FEET, TRAILER_HEIGHT_TOTAL_FEET, TRAILER_WIDTH_TOTAL_FEET]} />
-//       <meshStandardMaterial color="gray" transparent opacity={0.2} />
-//       <Edges color="red" />
-//     </mesh>
-//   );
-// }
-
-/*
-function KeiTruck({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
+function SimplePrism({ length = OUTER_LENGTH_TOTAL_FEET, width = OUTER_WIDTH_TOTAL_FEET, height = OUTER_HEIGHT_TOTAL_FEET }) {
+  // Centered at the origin
   return (
-    <group position={position}>
-      <SimplePrism />
-      <TrailerPrism />
-    </group>
+    <mesh position={[0, 0, 0]}>
+      <boxGeometry args={[length, height, width]} />
+      <meshStandardMaterial color="gray" transparent opacity={0.1} />
+      <Edges color="black" />
+    </mesh>
   );
 }
-*/
+
+function TruckUI({ onUpdate }: { onUpdate: (l: number, w: number, h: number) => void }) {
+  const [length, setLength] = useState(OUTER_LENGTH_TOTAL_FEET);
+  const [width, setWidth] = useState(OUTER_WIDTH_TOTAL_FEET);
+  const [height, setHeight] = useState(OUTER_HEIGHT_TOTAL_FEET);
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 20,
+      left: 20,
+      background: 'rgba(255,255,255,0.95)',
+      borderRadius: 8,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      padding: 16,
+      zIndex: 10,
+      minWidth: 180
+    }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Truck</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <label>
+          L: <input type="number" step="0.1" value={length} onChange={e => setLength(Number(e.target.value))} style={{ width: 60 }} />
+        </label>
+        <label>
+          W: <input type="number" step="0.1" value={width} onChange={e => setWidth(Number(e.target.value))} style={{ width: 60 }} />
+        </label>
+        <label>
+          H: <input type="number" step="0.1" value={height} onChange={e => setHeight(Number(e.target.value))} style={{ width: 60 }} />
+        </label>
+        <button onClick={() => onUpdate(length, width, height)} style={{ marginTop: 8, padding: '4px 12px', borderRadius: 4, border: '1px solid #888', background: '#eee', cursor: 'pointer' }}>Update</button>
+      </div>
+    </div>
+  );
+}
 
 const App = () => {
+  const [prismDims, setPrismDims] = useState({
+    length: OUTER_LENGTH_TOTAL_FEET,
+    width: OUTER_WIDTH_TOTAL_FEET,
+    height: OUTER_HEIGHT_TOTAL_FEET
+  });
+
   return (
-    <Canvas>
-      <ambientLight />
-      <pointLight position={[10, 10, 10]} />
-      <GridOfCubes />
-      <InnerBox />
-      <InnerInchGrid />
-      {/* <SimplePrism /> Uncomment to show the 10' x 8'6" x 13'6" prism */}
+    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+      <TruckUI onUpdate={(l, w, h) => setPrismDims({ length: l, width: w, height: h })} />
+      <Canvas>
+        <ambientLight />
+        <pointLight position={[10, 10, 10]} />
+        <SimplePrism length={prismDims.length} width={prismDims.width} height={prismDims.height} />
+        <InnerBox />
+        <InnerInchGrid />
+        <OrbitControls
+          mouseButtons={{
+            LEFT: MOUSE.PAN,
+            MIDDLE: MOUSE.DOLLY,
+            RIGHT: MOUSE.ROTATE,
+          }}
+          minDistance={50}
+          maxDistance={60}
+          enablePan={false}
+        />
+      </Canvas>
+      {/* <GridOfCubes />
+      <SimplePrism /> Uncomment to show the 10' x 8'6" x 13'6" prism */}
       {/* <KeiTruck position={[0, 0, 0]} /> */}
-      <OrbitControls
-        mouseButtons={{
-          LEFT: MOUSE.PAN,
-          MIDDLE: MOUSE.DOLLY,
-          RIGHT: MOUSE.ROTATE,
-        }}
-        minDistance={50}
-        maxDistance={60}
-        enablePan={false}
-      />
-    </Canvas>
+    </div>
   );
 }
 
